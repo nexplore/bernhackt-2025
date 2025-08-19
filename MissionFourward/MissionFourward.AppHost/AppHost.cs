@@ -15,6 +15,11 @@ var openapiClient = openai.AddDeployment(
     "gpt-4.1-mini",
     "2025-04-14").WithProperties(e => { e.SkuName = "GlobalStandard"; });
 
+var embeddingsClient = openai.AddDeployment(
+    AppConstants.ConnectionNames.OpenAIEmbeddingClient,
+    "text-embedding-ada-002",
+    "2").WithProperties(e => { e.SkuName = "GlobalStandard"; });
+
 var apiService = builder.AddProject<Projects.MissionFourward_ApiService>("apiservice")
     .WithHttpHealthCheck("/health");
 

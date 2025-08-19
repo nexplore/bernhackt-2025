@@ -13,8 +13,10 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddOutputCache();
 
-builder.AddAzureOpenAIClient(connectionName: AppConstants.ConnectionNames.OpenAI)
-    .AddChatClient(AppConstants.ConnectionNames.OpenAIDefaultClient);
+var openAiClient = builder.AddAzureOpenAIClient(connectionName: AppConstants.ConnectionNames.OpenAI);
+
+openAiClient.AddChatClient(AppConstants.ConnectionNames.OpenAIDefaultClient);
+openAiClient.AddEmbeddingGenerator(AppConstants.ConnectionNames.OpenAIEmbeddingClient);
 
 builder.Services.AddHttpClient<WeatherApiClient>(client =>
 {

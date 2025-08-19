@@ -6,5 +6,6 @@ public static class AppConstants
     {
         public const string OpenAI = "openai";
         public const string OpenAIDefaultClient = "gpt-4-1-mini";
+        public const string OpenAIEmbeddingClient = "text-embedding-ada-002";
     }
 }
