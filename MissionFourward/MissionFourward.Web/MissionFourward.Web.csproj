@@ -13,7 +13,9 @@
 
     <ItemGroup>
       <PackageReference Include="Aspire.Azure.AI.OpenAI" Version="9.4.1-preview.1.25408.4" />
+      <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.8" />
       <PackageReference Include="Microsoft.SemanticKernel" Version="1.62.0" />
+      <PackageReference Include="MudBlazor" Version="8.11.0" />
     </ItemGroup>
 
 </Project>
