@@ -23,6 +23,7 @@ builder.AddProject<Projects.MissionFourward_Web>("webfrontend")
     .WithHttpHealthCheck("/health")
     .WithReference(apiService)
     .WaitFor(apiService)
+    .WithReference(openai, optional: true)
     .WithReference(openapiClient, optional: true)
     /*.WaitFor(openai)*/;
 

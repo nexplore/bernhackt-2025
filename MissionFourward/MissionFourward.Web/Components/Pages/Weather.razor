@@ -1,8 +1,13 @@
 ﻿@page "/weather"
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using Microsoft.Extensions.AI
+@using Microsoft.SemanticKernel.ChatCompletion
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 
 @inject WeatherApiClient WeatherApi
+@inject  IChatClient  ChatClient
 
 <PageTitle>Weather</PageTitle>
 
@@ -39,14 +44,28 @@ else
         }
         </tbody>
     </table>
+    <blockquote>@responseText</blockquote>
 }
 
 @code {
     private WeatherForecast[]? forecasts;
+    
+    private string responseText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         forecasts = await WeatherApi.GetWeatherAsync();
+
+        StateHasChanged();
+        
+        var input = $"What's your feeling about the weather forecast: {JsonSerializer.Serialize(forecasts)}?";
+
+        await foreach(var response in ChatClient.GetStreamingResponseAsync(new ChatMessage(ChatRole.User, input)))
+        {
+            responseText += response.Text;
+            StateHasChanged();
+        }
+
     }
 
 }
