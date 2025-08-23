@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { SampleForceGraph } from './components/core/forcegraph'
+import { SampleForceGraph } from "./components/core/SampleForceGraph"
 import Layout from './components/core/layout'
 
 function App() {
