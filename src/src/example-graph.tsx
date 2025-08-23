@@ -1,0 +1,59 @@
+import { ForceGraph } from "@/components/core/forcegraph.tsx";
+import { mappedExampleData } from "@/example-data.util";
+import * as d3 from "d3";
+import type React from "react";
+
+export type SampleLink = {
+    source: string;
+    target: string;
+    attractionX: number;
+    attractionY: number;
+};
+
+export const SampleForceGraph: React.FC = () => {
+    const data = mappedExampleData
+
+    return (
+        <ForceGraph
+            xLabel="Feasibility"
+            yLabel="Viability"
+            nodes={data.nodes}
+            nodePosition={(node, {width, height}) => ({
+                x: node.feasibility * width,
+                y: node.viability * height,
+            })}
+            nodeRadius={(node) => node.size * 6}
+            nodeTitle={(node) => node.group}
+            nodeFill={(node) => {
+                if (node.benefit <= 0) {
+                    // Blend from red to white
+                    return d3.interpolateRgb("red", "white")(node.benefit + 1);
+                } else {
+                    // Blend from white to green
+                    return d3.interpolateRgb("white", "green")(node.benefit);
+                }
+            }}
+            links={data.links}
+            linkStrength={(link) => attractionDist(link) / 10}
+            linkMarker={(link) =>
+                attractionDist(link) != 0
+                    ? {type: "arrow", size: 6}
+                    : {type: "none", size: 0}
+            }
+            linkStroke={(link) =>
+                attractionDist(link) > 0.01
+                    ? "green"
+                    : attractionDist(link) < 0.01
+                        ? "red"
+                        : "gray"
+            }
+        />
+    );
+};
+
+function attractionDist(link: SampleLink) {
+    return (
+        Math.sign(link.attractionX + link.attractionY) *
+        Math.sqrt(link.attractionX ** 2 + link.attractionY ** 2)
+    );
+}
