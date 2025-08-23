@@ -481,6 +481,12 @@ const startingPositions = forceReturnToPos((node: ForceGraphNode<TData>) => {
   if (LM) link.attr("marker-end", (_, i) => `url(#${LM[i]})`);
   if (G) node.attr("fill", (_, i) => color(G[i]));
   if (R) node.attr("r", (_, i) => R[i]);
+  // store computed fill and radius on each datum for use during tick updates
+  node.each(function (d: any, i: number) {
+    const computedFill = G ? color(G[i]) : typeof nodeFill === "function" ? (nodeFill as any)(d) : nodeFill;
+    d.__fill = computedFill;
+    d.__r = typeof nodeRadius === "function" ? (nodeRadius as any)(d) : (nodeRadius as number);
+  });
   if (invalidation != null) invalidation.then(() => simulation.stop());
 
   function intern(value) {
@@ -515,7 +521,56 @@ const startingPositions = forceReturnToPos((node: ForceGraphNode<TData>) => {
 
     node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
 
-    nodeLabels.attr("x", (d) => d.x).attr("y", (d) => d.y);
+    // Position labels: center them if they fit inside the node circle;
+    // otherwise render the label to the right of the circle.
+    nodeLabels.each(function (d: any) {
+      const textEl = this as SVGTextElement;
+      const txt = d3.select(textEl);
+      const r = d.__r ?? (typeof nodeRadius === "function" ? (nodeRadius as any)(d) : (nodeRadius as number));
+
+      // Temporarily place the label at the node position so getBBox() returns correct width.
+      txt.attr("x", d.x).attr("y", d.y);
+
+      let labelWidth = 0;
+      try {
+        const bbox = textEl.getBBox();
+        labelWidth = bbox.width;
+      } catch (e) {
+        // getBBox can throw in some environments; fall back to 0 so label defaults to right placement
+        labelWidth = 0;
+      }
+
+      const paddingForLabel = 4; // small padding inside the circle
+      const gap = 6; // gap between circle edge and label when rendered outside
+
+      if (labelWidth <= (r * 2 - paddingForLabel)) {
+        // fits inside circle — center the label and choose contrasting text color
+        txt.attr("text-anchor", "middle").attr("x", d.x);
+        // determine fill contrast; default to currentColor if we can't parse
+        let fillColor = d.__fill;
+        if (fillColor == null) fillColor = typeof nodeFill === "function" ? (nodeFill as any)(d) : nodeFill;
+        let useWhite = false;
+        try {
+          const c = d3.color(fillColor as any);
+          if (c) {
+            const rgb = c.rgb();
+            // perceived luminance
+            const lum = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+            useWhite = lum < 140; // threshold — tweak if needed
+          }
+        } catch (e) {
+          useWhite = false;
+        }
+        txt.style("fill", useWhite ? "white" : "currentColor");
+        txt.style("font-weight", useWhite ? "bold" : "normal");
+      } else {
+        // doesn't fit — place to the right of the circle, use default text color
+        txt.attr("text-anchor", "start").attr("x", d.x + r + gap).style("fill", "currentColor");
+      }
+
+      // always vertically center
+      txt.attr("y", d.y).attr("alignment-baseline", "middle");
+    });
   }
 
   return Object.assign(svg.node(), { scales: { color } });

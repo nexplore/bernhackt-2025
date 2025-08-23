@@ -103,7 +103,7 @@ const data = mappedExampleData
         x: node.feasibility * width,
         y: node.viability * height,
       })}
-      nodeRadius={(node) => node.size * 15}
+      nodeRadius={(node) => node.size * 6}
       nodeTitle={(node) => node.group}
       nodeFill={(node) => {
         // node.sentiment: -1 (red), 0 (white), 1 (green)
