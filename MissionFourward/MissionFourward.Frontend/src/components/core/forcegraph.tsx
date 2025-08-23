@@ -561,11 +561,22 @@ const startingPositions = forceReturnToPos((node: ForceGraphNode<TData>) => {
         } catch (e) {
           useWhite = false;
         }
-        txt.style("fill", useWhite ? "white" : "currentColor");
-        txt.style("font-weight", useWhite ? "bold" : "normal");
+        if (useWhite) {
+          // white text on dark fill -> thin black outline
+          txt.style("fill", "white");
+          txt.style("stroke", "black");
+          txt.style("stroke-width", "1px");
+        } else {
+          // dark/black text -> thick white outline for readability over links
+          txt.style("fill", "currentColor");
+          txt.style("stroke", "white");
+          txt.style("stroke-width", "2px");
+        }
+        txt.attr("paint-order", "stroke fill").style("stroke-linejoin", "round");
       } else {
-        // doesn't fit — place to the right of the circle, use default text color
+        // doesn't fit — place to the right of the circle, use default text color with white outline
         txt.attr("text-anchor", "start").attr("x", d.x + r + gap).style("fill", "currentColor");
+        txt.style("stroke", "white").style("stroke-width", "6px").attr("paint-order", "stroke fill").style("stroke-linejoin", "round");
       }
 
       // always vertically center

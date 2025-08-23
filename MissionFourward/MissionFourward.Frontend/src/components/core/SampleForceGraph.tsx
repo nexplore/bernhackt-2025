@@ -88,7 +88,7 @@ const data = mappedExampleData
       // linkStrengthX={link => link.attractionX }
       // linkStrengthY={link => link.attractionY  }
       linkMarker={(link) =>
-        attractionDist(link) > 0
+        attractionDist(link) != 0
           ? { type: "arrow", size: 6 }
           : { type: "none", size: 0 }
       }
