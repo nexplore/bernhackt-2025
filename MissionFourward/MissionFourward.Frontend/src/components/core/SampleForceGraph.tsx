@@ -1,13 +1,12 @@
 import * as d3 from "d3";
 import type React from "react";
-import { ForceGraph, attractionDist, type ForceGraphData } from "./forcegraph";
-
+import { ForceGraph, type ForceGraphData } from "./forcegraph";
 
 export type SampleNode = {
   id: string;
   group: string;
-  x: number; // feasibility
-  y: number; // viability
+  feasibility: number; // feasibility
+  viability: number; // viability
   size: number; // desirability
   benefit: number;
 };
@@ -31,10 +30,38 @@ export const SampleForceGraph: React.FC = () => {
       // framing parameters: MUST
       // Green shadow: Universal Synergy
 
-      { id: "1", group: "Google Pay Debit", x: 200, y: 300, size: 5, benefit: 0.8 },
-      { id: "2", group: "Customer Data Mgmt", x: 150, y: 350, size: 6, benefit: 0 },
-      { id: "3", group: "Twint", x: 300, y: 400, size: 3, benefit: -0.6 },
-      { id: "4", group: "Instant Payments", x: 150, y: 600, size: 8, benefit: 0.1 },
+      {
+        id: "1",
+        group: "Google Pay Debit",
+        feasibility: 0.5,
+        viability: 0.3,
+        size: 5,
+        benefit: 0.8,
+      },
+      {
+        id: "2",
+        group: "Customer Data Mgmt",
+        feasibility: 0.25,
+        viability: 0.75,
+        size: 6,
+        benefit: 0,
+      },
+      {
+        id: "3",
+        group: "Twint",
+        feasibility: 0.3,
+        viability: 0.4,
+        size: 3,
+        benefit: -0.6,
+      },
+      {
+        id: "4",
+        group: "Instant Payments",
+        feasibility: 0.7,
+        viability: 0.5,
+        size: 8,
+        benefit: 0.1,
+      },
     ],
     links: [
       // Voraussetzung: Arrow
@@ -56,14 +83,22 @@ export const SampleForceGraph: React.FC = () => {
       linkStrength={(link) => attractionDist(link) / 10}
       // linkStrengthX={link => link.attractionX }
       // linkStrengthY={link => link.attractionY  }
-      linkMarker={(link) => attractionDist(link) > 0
-        ? { type: "arrow", size: 6 }
-        : { type: "none", size: 0 }}
-      linkStroke={(link) => attractionDist(link) > 0.01
-        ? "green"
-        : attractionDist(link) < 0.01
+      linkMarker={(link) =>
+        attractionDist(link) > 0
+          ? { type: "arrow", size: 6 }
+          : { type: "none", size: 0 }
+      }
+      linkStroke={(link) =>
+        attractionDist(link) > 0.01
+          ? "green"
+          : attractionDist(link) < 0.01
           ? "red"
-          : "gray"}
+          : "gray"
+      }
+      nodePosition={(node, { width, height }) => ({
+        x: node.feasibility * width,
+        y: node.viability * height,
+      })}
       nodeRadius={(node) => node.size * 15}
       nodeTitle={(node) => node.group}
       nodeFill={(node) => {
@@ -75,10 +110,10 @@ export const SampleForceGraph: React.FC = () => {
           // Blend from white to green
           return d3.interpolateRgb("white", "green")(node.benefit);
         }
-      }} />
+      }}
+    />
   );
 };
-
 
 function attractionDist(link: SampleLink) {
   return (

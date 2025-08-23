@@ -31,6 +31,7 @@ type ForceGraphOptions<T, TLink = {}> = {
   nodeStrokeOpacity?: number;
   nodeRadius?: number | ((d: ForceGraphNode<T>) => number);
   nodeStrength?: number | ((d: ForceGraphNode<T>) => number);
+  nodePosition?: (d: ForceGraphNode<T>, state: { width: number; height: number }) => { x: number; y: number };
   nodeOnClick?: (d: ForceGraphNode<T>, selected: boolean) => void;
   linkSource?: (d: ForceGraphLink<TLink>) => any;
   linkTarget?: (d: ForceGraphLink<TLink>) => any;
@@ -80,7 +81,8 @@ function createD3ForceGraph<TData, TLink = {}>(
     nodeStrokeWidth = 1.5, // node stroke width, in pixels
     nodeStrokeOpacity = 1, // node stroke opacity
     nodeRadius = 5, // node radius, in pixels
-    nodeStrength,
+  nodeStrength,
+  nodePosition,
     linkSource = ({ source }) =>
       typeof source === "number" || typeof source === "string"
         ? source
@@ -106,6 +108,29 @@ function createD3ForceGraph<TData, TLink = {}>(
   }: ForceGraphOptions<TData, TLink> = {}
 ) {
   // Compute values.
+
+
+  // If the user provided an accessor to initialize node positions, apply it now.
+  // The accessor should return an object with numeric { x, y } coordinates. These
+  // values are assigned directly to the simulation's node objects (d.x, d.y).
+  // Note: the coordinate convention used by the rest of this component expects
+  // coordinates in the same space the simulation uses (some callers use 0..1
+  // normalized coords; others use pixel values). The accessor should match the
+  // coordinate system you expect the simulation to use.
+  if (typeof nodePosition === "function") {
+    nodes.forEach((n) => {
+      try {
+        const p = (nodePosition)(n, { width, height });
+        if (p && typeof p.x === "number") n.x = p.x;
+        if (p && typeof p.y === "number") n.y = height - p.y;
+      } catch (e) {
+        // swallow accessor errors to avoid breaking the whole graph
+        // eslint-disable-next-line no-console
+        console.warn("nodePosition accessor threw:", e);
+      }
+    });
+  }
+
   const N = d3.map(nodes, nodeId).map(intern);
   const R = typeof nodeRadius !== "function" ? null : d3.map(nodes, nodeRadius);
   const LS = d3.map(links, linkSource).map(intern);
@@ -143,6 +168,7 @@ function createD3ForceGraph<TData, TLink = {}>(
     source: LS[i],
     target: LT[i],
   }));
+
 
   // Compute default domains.
   if (G && nodeGroups === undefined) nodeGroups = d3.sort(G);
@@ -185,8 +211,8 @@ function createD3ForceGraph<TData, TLink = {}>(
   const simulation = d3
     .forceSimulation(nodes)
     .force("link", forceLink)
-    .force("charge", forceNode)
-    .force("center", d3.forceCenter())
+    // .force("charge", forceNode)
+    // .force("center", d3.forceCenter())
     .force("collide", d3.forceCollide().radius(nodeRadius))
     .on("tick", ticked);
 
@@ -195,8 +221,8 @@ function createD3ForceGraph<TData, TLink = {}>(
     .create("svg")
     .attr("width", "100%")
     .attr("viewBox", [
-      -width / 2 - padding,
-      -height / 2 - padding,
+      0 ,
+      0 ,
       width + padding * 2,
       height + padding * 2,
     ])
@@ -221,20 +247,22 @@ function createD3ForceGraph<TData, TLink = {}>(
     .attr("fill", "current-color");
 
   // Add X and Y axes (legend) behind the graph, positioned at left and bottom edges
-  const leftX = -width / 2 + axisMargin;
-  const bottomY = height / 2 - axisMargin;
+  // const leftX = -width / 2 + axisMargin;
+  // const bottomY = height / 2 - axisMargin;
+  const leftX = padding;
+  const bottomY = height - padding;
 
   const xScale = d3
     .scaleLinear()
-    .domain([-width / 2, width / 2])
-    .range([-width / 2, width / 2]);
+    .domain([0, width])
+    .range([padding, width - padding]);
   const yScale = d3
     .scaleLinear()
-    .domain([-height / 2, height / 2])
-    .range([-height / 2, height / 2]);
+    .domain([0, height])
+    .range([padding, height - padding]);
 
-  const xAxis = d3.axisBottom(xScale).ticks(5).tickSizeOuter(0);
-  const yAxis = d3.axisLeft(yScale).ticks(5).tickSizeOuter(0);
+  const xAxis = d3.axisBottom(xScale).ticks(0).tickSizeOuter(0);
+  const yAxis = d3.axisLeft(yScale).ticks(0).tickSizeOuter(0);
 
   const axes = svg.append("g").attr("class", "axes");
   const xAxisGroup = axes
@@ -254,8 +282,8 @@ function createD3ForceGraph<TData, TLink = {}>(
   xAxisGroup
     .append("text")
     .attr("class", "x-label")
-    .attr("x", 0)
-    .attr("y", 30)
+    .attr("x", 100)
+    .attr("y", 15)
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .style("fill", "currentColor")
@@ -265,8 +293,8 @@ function createD3ForceGraph<TData, TLink = {}>(
     .append("text")
     .attr("class", "y-label")
     .attr("transform", "rotate(-90)")
-    .attr("x", 0)
-    .attr("y", -30)
+    .attr("x", -100)
+    .attr("y", -10)
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .style("fill", "currentColor")
