@@ -1,6 +1,8 @@
 import * as d3 from "d3";
 import type React from "react";
 import { ForceGraph, type ForceGraphData } from "./forcegraph";
+import { mapExampleDataToForceGraph, mappedExampleData } from "@/example-data.util";
+import { evaluations, projects } from "@/example-data";
 
 export type SampleNode = {
   id: string;
@@ -19,7 +21,7 @@ export type SampleLink = {
 };
 
 export const SampleForceGraph: React.FC = () => {
-  const data: ForceGraphData<SampleNode, SampleLink> = {
+  const data0: ForceGraphData<SampleNode, SampleLink> = {
     nodes: [
       // x: feasiblity
       // y: viablity
@@ -74,6 +76,8 @@ export const SampleForceGraph: React.FC = () => {
     ],
   };
 
+
+const data = mappedExampleData
   return (
     <ForceGraph
       xLabel="Feasibility"
