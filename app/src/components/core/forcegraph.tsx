@@ -65,13 +65,15 @@ type ForceGraphOptions<T, TLink = {}> = {
   linkStrokeWidth?: number | ((d: ForceGraphLink<TLink>) => number);
   /** Link stroke linecap or accessor. */
   linkStrokeLinecap?: string | ((d: ForceGraphLink<TLink>) => string);
+  /** Stroke dasharray for links (e.g. "4 2") or accessor returning such a string. */
+  linkStrokeStyle?: string | ((d: ForceGraphLink<TLink>) => string);
   /**
    * Link marker configuration. Either a marker id (string) applied to all
    * links, or an accessor returning { type: 'arrow' | 'none', size }.
    */
   linkMarker?:
     | string
-    | ((d: ForceGraphLink<TLink>) => { type: "arrow" | "none"; size: number });
+    | ((d: ForceGraphLink<TLink>) => { type: "arrow-start" | "arrow-end" | "none"; size: number });
   /** Per-link strength (or accessor). When provided, link strength may be
    * gated by selection so only links touching the selected node are active. */
   linkStrength?: number | ((d: ForceGraphLink<TLink>) => number);
@@ -133,6 +135,7 @@ function createD3ForceGraph<TData, TLink = {}>(
     linkStroke = "#999",
     linkStrokeOpacity = 0.6,
     linkStrokeWidth = 1.5,
+  linkStrokeStyle,
     linkStrokeLinecap = "round",
     linkStrength,
     nodeOnClick,
@@ -181,19 +184,21 @@ function createD3ForceGraph<TData, TLink = {}>(
     typeof linkStrokeLinecap !== "function"
       ? null
       : d3.map(links, linkStrokeLinecap);
+  const lineStrokeStyles =
+    typeof linkStrokeStyle !== "function" ? null : d3.map(links, linkStrokeStyle as any);
 
   // Compute per-link marker types. If `linkMarker` is a function, evaluate
   // it per-link to obtain dynamic marker type/size. If `linkMarker` is a
   // string, use that marker id for all links. Otherwise compute a default
   // per-link marker (e.g. arrows only when net attraction is positive).
-  let LM: any = null;
-  let LM_default: any = null;
+  let linkMarkers: Array<string | null> = null;
+  let linkMarkerDefaults: Array<string | null> = null;
   if (typeof linkMarker === "function") {
-    LM = d3.map(links, (d) => linkMarker(d)?.type);
+    linkMarkers = d3.map(links, (d) => linkMarker(d)?.type);
   } else if (!linkMarker) {
     const sxAcc = 0;
     const syAcc = 0;
-    LM_default = d3.map(links, (_) => (sxAcc + syAcc > 0 ? "arrow" : null));
+    linkMarkerDefaults = d3.map(links, (_) => (sxAcc + syAcc > 0 ? "arrow" : null));
   }
 
   // Replace immutable input arrays with mutable shallow copies used by D3.
@@ -390,7 +395,8 @@ function createD3ForceGraph<TData, TLink = {}>(
 
   const link = svg
     .append("g")
-    .attr("stroke", typeof linkStroke !== "function" ? linkStroke : null)
+  .attr("stroke", typeof linkStroke !== "function" ? linkStroke : null)
+  .attr("stroke-dasharray", typeof linkStrokeStyle !== "function" ? linkStrokeStyle : null)
     .attr("stroke-opacity", linkStrokeOpacity)
     .attr(
       "stroke-width",
@@ -407,15 +413,15 @@ function createD3ForceGraph<TData, TLink = {}>(
       if (typeof linkMarker === "function")
         return `url(#${(linkMarker as any)(d).type})`;
       if (linkMarker) return `url(#${linkMarker})`;
-      return LM_default && LM_default[i] ? `url(#${LM_default[i]})` : null;
+      return linkMarkerDefaults && linkMarkerDefaults[i] ? `url(#${linkMarkerDefaults[i]})` : null;
     })
     .attr("markerWidth", (d, i) => {
       if (typeof linkMarker === "function") return (linkMarker as any)(d).size;
-      return LM_default && LM_default[i] ? 6 : 0;
+      return linkMarkerDefaults && linkMarkerDefaults[i] ? 6 : 0;
     })
     .attr("markerHeight", (d, i) => {
       if (typeof linkMarker === "function") return (linkMarker as any)(d).size;
-      return LM_default && LM_default[i] ? 6 : 0;
+      return linkMarkerDefaults && linkMarkerDefaults[i] ? 6 : 0;
     });
   const node = svg
     .append("g")
@@ -504,7 +510,8 @@ function createD3ForceGraph<TData, TLink = {}>(
   if (lineStrokeWidths) link.attr("stroke-width", (_, i) => lineStrokeWidths[i]);
   if (lineStrokes) link.attr("stroke", (_, i) => lineStrokes[i]);
   if (lineStrokeLineCaps) link.attr("stroke-linecap", (_, i) => lineStrokeLineCaps[i]);
-  if (LM) link.attr("marker-end", (_, i) => `url(#${LM[i]})`);
+  if (lineStrokeStyles) link.attr("stroke-dasharray", (_: any, i: number) => lineStrokeStyles[i] as string);
+  if (linkMarkers) link.attr("marker-end", (_, i) => `url(#${linkMarkers[i]})`);
   if (nodeGroupsIntern) node.attr("fill", (_, i) => color(nodeGroupsIntern[i]));
   if (nodesRadiusIntern) node.attr("r", (_, i) => nodesRadiusIntern[i]);
   // Store derived visual properties (computed fill and radius) on each
