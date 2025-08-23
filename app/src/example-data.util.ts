@@ -1,7 +1,27 @@
 // src/lib/mapExampleToForceGraph.ts
 import type { ForceGraphData } from "./components/core/forcegraph";
-import type { SampleNode, SampleLink } from "./components/core/SampleForceGraph";
-import { type projects as ProjectsType, type evaluations as EvaluationsType, projects, evaluations } from "./example-data"; // for dev-time types only (optional)
+import {
+  type projects as ProjectsType,
+  type evaluations as EvaluationsType,
+  projects,
+  evaluations,
+} from "./example-data"; // for dev-time types only (optional)
+
+type SampleNode = {
+  id: string;
+  group: string;
+  feasibility: number;
+  viability: number;
+  size: number;
+  benefit: number;
+};
+
+type SampleLink = {
+  source: string;
+  target: string;
+  attractionX: number;
+  attractionY: number;
+};
 
 /**
  * Map example data (projects + evaluations) to ForceGraphData<SampleNode, SampleLink>.
@@ -26,7 +46,16 @@ export function mapExampleDataToForceGraph(
     const idx = choiceCodes.indexOf(choice);
     if (idx === -1) {
       // fallback: try to map proportionally if it's numeric and in reasonable range
-      return Number.isFinite(choice) ? Math.max(0, Math.min(1, (choice - choiceCodes[0]) / (choiceCodes[choiceCodes.length - 1] - choiceCodes[0] || 1))) : NaN;
+      return Number.isFinite(choice)
+        ? Math.max(
+            0,
+            Math.min(
+              1,
+              (choice - choiceCodes[0]) /
+                (choiceCodes[choiceCodes.length - 1] - choiceCodes[0] || 1)
+            )
+          )
+        : NaN;
     }
     return idx / (choiceCodes.length - 1);
   }
@@ -76,12 +105,24 @@ export function mapExampleDataToForceGraph(
     ];
 
     // Synergy keys for link attraction
-    const synergyKeys = ["im_3_10_02_synergyuniversal", "im_3_10_01_synergyspecific", "im_3_10_02_synergyendemic"];
+    const synergyKeys = [
+      "im_3_10_02_synergyuniversal",
+      "im_3_10_01_synergyspecific",
+      "im_3_10_02_synergyendemic",
+    ];
 
-    const feasibilityVals = evs.flatMap((ev) => feasibilityKeys.map((k) => normalizeChoiceTo01(ev[k])));
-    const viabilityVals = evs.flatMap((ev) => viabilityKeys.map((k) => normalizeChoiceTo01(ev[k])));
-    const benefitVals = evs.flatMap((ev) => benefitKeys.map((k) => normalizeChoiceTo01(ev[k])));
-    const synergyVals = evs.flatMap((ev) => synergyKeys.map((k) => normalizeChoiceToMinus1To1(ev[k])));
+    const feasibilityVals = evs.flatMap((ev) =>
+      feasibilityKeys.map((k) => normalizeChoiceTo01(ev[k]))
+    );
+    const viabilityVals = evs.flatMap((ev) =>
+      viabilityKeys.map((k) => normalizeChoiceTo01(ev[k]))
+    );
+    const benefitVals = evs.flatMap((ev) =>
+      benefitKeys.map((k) => normalizeChoiceTo01(ev[k]))
+    );
+    const synergyVals = evs.flatMap((ev) =>
+      synergyKeys.map((k) => normalizeChoiceToMinus1To1(ev[k]))
+    );
 
     return {
       feasibility: avgValid(feasibilityVals),
@@ -107,7 +148,9 @@ export function mapExampleDataToForceGraph(
     }
 
     // feasibility/viability fallback to NaN -> set to .5 neutral
-    const feasibility = Number.isFinite(agg.feasibility) ? agg.feasibility : 0.5;
+    const feasibility = Number.isFinite(agg.feasibility)
+      ? agg.feasibility
+      : 0.5;
     const viability = Number.isFinite(agg.viability) ? agg.viability : 0.5;
 
     // size: derive from im_costs (smaller cost -> larger size). map to roughly 3..10
@@ -137,7 +180,10 @@ export function mapExampleDataToForceGraph(
     }
 
     // Build array with original scores (use 0.5 for missing values to keep them in middle)
-    const scored = nodes.map((n, i) => ({ i, score: Number.isFinite(n[attr]) ? (n[attr] as number) : 0.5 }));
+    const scored = nodes.map((n, i) => ({
+      i,
+      score: Number.isFinite(n[attr]) ? (n[attr] as number) : 0.5,
+    }));
 
     // Sort by score to preserve ordering
     scored.sort((a, b) => a.score - b.score || a.i - b.i);
@@ -151,12 +197,17 @@ export function mapExampleDataToForceGraph(
     const maxS = Math.max(...scores);
     const denom = maxS - minS;
 
-    const rawPositions = scores.map((s) => (denom > 1e-9 ? (s - minS) / denom : 0.5));
+    const rawPositions = scores.map((s) =>
+      denom > 1e-9 ? (s - minS) / denom : 0.5
+    );
     const positions = rawPositions.map((r) => margin + r * span);
 
     // Ensure a tiny minimum separation so very close or identical scores remain visible.
     // Min separation adapts slightly with node count but stays small so relative distances are preserved.
-    const minSep = Math.max(1e-4, span * 0.005 / Math.max(1, Math.log2(N + 1)));
+    const minSep = Math.max(
+      1e-4,
+      (span * 0.005) / Math.max(1, Math.log2(N + 1))
+    );
 
     // Forward pass: enforce increasing separation
     for (let k = 1; k < positions.length; k++) {
@@ -173,7 +224,10 @@ export function mapExampleDataToForceGraph(
     // Finally clamp into [margin, 1-margin] and write back to nodes (preserve original indices)
     for (let rank = 0; rank < scored.length; rank++) {
       const idx = scored[rank].i;
-      nodes[idx][attr] = Math.max(margin, Math.min(1 - margin, positions[rank]));
+      nodes[idx][attr] = Math.max(
+        margin,
+        Math.min(1 - margin, positions[rank])
+      );
     }
   }
 
@@ -187,7 +241,8 @@ export function mapExampleDataToForceGraph(
     for (let j = i + 1; j < projects.length; j++) {
       const a = projects[i];
       const b = projects[j];
-      const sameBU = a.owningbusinessunit && a.owningbusinessunit === b.owningbusinessunit;
+      const sameBU =
+        a.owningbusinessunit && a.owningbusinessunit === b.owningbusinessunit;
       const sameOwner = a.owninguser && a.owninguser === b.owninguser;
 
       if (!sameBU && !sameOwner) continue;
@@ -201,9 +256,9 @@ export function mapExampleDataToForceGraph(
       const attraction = (synergyA + synergyB) / 2;
 
       // project pair similarity in benefit drives X/Y distribution
-      const benefitA = pToNumber(a.im_benefit) ?? (aggA.benefitFallback01 ?? 0.5);
-      const benefitB = pToNumber(b.im_benefit) ?? (aggB.benefitFallback01 ?? 0.5);
-      const benefitDiff = (benefitA - benefitB);
+      const benefitA = pToNumber(a.im_benefit) ?? aggA.benefitFallback01 ?? 0.5;
+      const benefitB = pToNumber(b.im_benefit) ?? aggB.benefitFallback01 ?? 0.5;
+      const benefitDiff = benefitA - benefitB;
 
       // simple layout of attraction vector:
       const attractionX = attraction * (1 - Math.abs(benefitDiff));
@@ -227,59 +282,62 @@ export function mapExampleDataToForceGraph(
     return Number.isFinite(n01) ? n01 : undefined;
   }
 }
-export const mappedExampleData = mapExampleDataToForceGraph(projects, evaluations);
+export const mappedExampleData = mapExampleDataToForceGraph(
+  projects,
+  evaluations
+);
 
 export const staticExampleData: ForceGraphData<SampleNode, SampleLink> = {
-    nodes: [
-        // x: feasiblity
-        // y: viablity
-        // size: desirability
-        // color: benefit
+  nodes: [
+    // x: feasiblity
+    // y: viablity
+    // size: desirability
+    // color: benefit
 
-        // TBD:
-        // framing parameters: MUST
-        // Green shadow: Universal Synergy
+    // TBD:
+    // framing parameters: MUST
+    // Green shadow: Universal Synergy
 
-        {
-            id: "1",
-            group: "Google Pay Debit",
-            feasibility: 0.5,
-            viability: 0.3,
-            size: 5,
-            benefit: 0.8,
-        },
-        {
-            id: "2",
-            group: "Customer Data Mgmt",
-            feasibility: 0.25,
-            viability: 0.75,
-            size: 6,
-            benefit: 0,
-        },
-        {
-            id: "3",
-            group: "Twint",
-            feasibility: 0.3,
-            viability: 0.4,
-            size: 3,
-            benefit: -0.6,
-        },
-        {
-            id: "4",
-            group: "Instant Payments",
-            feasibility: 0.7,
-            viability: 0.5,
-            size: 8,
-            benefit: 0.1,
-        },
-    ],
-    links: [
-        // Voraussetzung: Arrow
-        // Dissynergie: Red dashed
-        // Synergie: Green dashed
-        {source: "1", target: "2", attractionX: 0.5, attractionY: 0.1},
-        {source: "2", target: "3", attractionX: 0.1, attractionY: 0.2},
-        {source: "3", target: "4", attractionX: -0.1, attractionY: -0.02},
-        {source: "4", target: "1", attractionX: 0.3, attractionY: 0.4},
-    ],
+    {
+      id: "1",
+      group: "Google Pay Debit",
+      feasibility: 0.5,
+      viability: 0.3,
+      size: 5,
+      benefit: 0.8,
+    },
+    {
+      id: "2",
+      group: "Customer Data Mgmt",
+      feasibility: 0.25,
+      viability: 0.75,
+      size: 6,
+      benefit: 0,
+    },
+    {
+      id: "3",
+      group: "Twint",
+      feasibility: 0.3,
+      viability: 0.4,
+      size: 3,
+      benefit: -0.6,
+    },
+    {
+      id: "4",
+      group: "Instant Payments",
+      feasibility: 0.7,
+      viability: 0.5,
+      size: 8,
+      benefit: 0.1,
+    },
+  ],
+  links: [
+    // Voraussetzung: Arrow
+    // Dissynergie: Red dashed
+    // Synergie: Green dashed
+    { source: "1", target: "2", attractionX: 0.5, attractionY: 0.1 },
+    { source: "2", target: "3", attractionX: 0.1, attractionY: 0.2 },
+    { source: "3", target: "4", attractionX: -0.1, attractionY: -0.02 },
+    { source: "4", target: "1", attractionX: 0.3, attractionY: 0.4 },
+  ],
 };
