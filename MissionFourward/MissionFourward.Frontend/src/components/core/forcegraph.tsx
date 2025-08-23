@@ -450,22 +450,6 @@ export function ForceGraph<T, TLink = {}>(props: ForceGraphProps<T, TLink>) {
   return <div ref={ref} />;
 }
 
-export type SampleNode = {
-  id: string;
-  group: string;
-  x: number; // feasibility
-  y: number; // viability
-  size: number; // desirability
-  benefit: number;
-};
-
-export type SampleLink = {
-  source: string;
-  target: string;
-  attractionX: number;
-  attractionY: number;
-};
-
 export function attractionDist(link: SampleLink) {
   return (
     Math.sign(link.attractionX + link.attractionY) *
