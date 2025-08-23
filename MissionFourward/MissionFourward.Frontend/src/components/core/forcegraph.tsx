@@ -449,10 +449,3 @@ export function ForceGraph<T, TLink = {}>(props: ForceGraphProps<T, TLink>) {
 
   return <div ref={ref} />;
 }
-
-export function attractionDist(link: SampleLink) {
-  return (
-    Math.sign(link.attractionX + link.attractionY) *
-    Math.sqrt(link.attractionX ** 2 + link.attractionY ** 2)
-  );
-}

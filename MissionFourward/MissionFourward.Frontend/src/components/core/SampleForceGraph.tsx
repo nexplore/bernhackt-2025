@@ -78,3 +78,11 @@ export const SampleForceGraph: React.FC = () => {
       }} />
   );
 };
+
+
+function attractionDist(link: SampleLink) {
+  return (
+    Math.sign(link.attractionX + link.attractionY) *
+    Math.sqrt(link.attractionX ** 2 + link.attractionY ** 2)
+  );
+}
