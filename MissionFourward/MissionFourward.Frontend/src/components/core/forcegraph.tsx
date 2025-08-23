@@ -198,7 +198,7 @@ function createD3ForceGraph<TData, TLink = {}>(
           : () => linkStrength as number;
 
 const startingPositions = forceReturnToPos((node: ForceGraphNode<TData>) => {
-  if (node.id === selectedId) {
+  if (node.id === selectedId || !selectedId) {
     const pos = nodePosition(node, { width, height });
     pos.y = height - pos.y; // invert y axis
     return pos;
