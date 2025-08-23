@@ -1,3 +1,4 @@
+import forceReturnToPos from "@/lib/force-return-to-pos";
 import * as d3 from "d3";
 
 import { type SimulationNodeDatum } from "d3";
@@ -184,6 +185,8 @@ function createD3ForceGraph<TData, TLink = {}>(
   const forceLink = linkStrength
     ? d3.forceLink(links).id(({ index: i }) => N[i])
     : null;
+    // Create a force, that when active, slowly moves nodes to their starting position (similar to forceCenter, not modifying velocities but positions)
+
   if (nodeStrength !== undefined) forceNode.strength(nodeStrength);
   // Wrap the provided linkStrength so it only applies when the link's target
   // node is the currently selected node. Otherwise return 0. The strength
@@ -194,6 +197,15 @@ function createD3ForceGraph<TData, TLink = {}>(
           ? (l: any) => (linkStrength as any)(l)
           : () => linkStrength as number;
 
+const startingPositions = forceReturnToPos((node: ForceGraphNode<TData>) => {
+  if (node.id === selectedId) {
+    const pos = nodePosition(node, { width, height });
+    pos.y = height - pos.y; // invert y axis
+    return pos;
+  }
+  return null;
+});
+
   function initializeForceLink() {
     if (linkStrength !== undefined && forceLink) {
 
@@ -203,6 +215,9 @@ function createD3ForceGraph<TData, TLink = {}>(
         console.log('selected', selectedId, 'matches', tid === selectedId, l)
         return tid === selectedId ? baseStrength(l) : 0;
       });
+
+
+    
     }
   }
 
@@ -214,6 +229,7 @@ function createD3ForceGraph<TData, TLink = {}>(
     // .force("charge", forceNode)
     // .force("center", d3.forceCenter())
     .force("collide", d3.forceCollide().radius(nodeRadius))
+    .force('startingPositions', startingPositions)
     .on("tick", ticked);
 
   const padding = axisMargin + 20;
@@ -231,11 +247,14 @@ function createD3ForceGraph<TData, TLink = {}>(
       "max-width: 100%; height: auto; height: intrinsic; max-height: 90vh"
     );
 
-  // Add arrow marker definition
-  svg
-    .append("defs")
+  // Add arrow marker definitions (start and end variants so we can use
+  // marker-start and marker-end on axis lines reliably).
+  const defs = svg.append("defs");
+
+  // Arrow pointing forward for marker-end
+  defs
     .append("marker")
-    .attr("id", "arrow")
+    .attr("id", "arrow-end")
     .attr("viewBox", "0 -5 10 10")
     .attr("refX", 10)
     .attr("refY", 0)
@@ -244,7 +263,21 @@ function createD3ForceGraph<TData, TLink = {}>(
     .attr("orient", "auto")
     .append("path")
     .attr("d", "M0,-5L10,0L0,5")
-    .attr("fill", "current-color");
+    .attr("fill", "currentColor");
+
+  // Arrow reversed for marker-start
+  defs
+    .append("marker")
+    .attr("id", "arrow-start")
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 0)
+    .attr("refY", 0)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M10,-5L0,0L10,5")
+    .attr("fill", "currentColor");
 
   // Add X and Y axes (legend) behind the graph, positioned at left and bottom edges
   // const leftX = -width / 2 + axisMargin;
@@ -299,6 +332,34 @@ function createD3ForceGraph<TData, TLink = {}>(
     .style("font-size", "12px")
     .style("fill", "currentColor")
     .text(yLabel);
+
+  // Draw explicit axis lines with arrowheads at both ends so arrows are
+  // visible even when the default axis path is minimal (ticks are 0).
+  const axisLines = axes.append("g").attr("class", "axis-lines");
+
+  // X axis line (left -> right)
+  axisLines
+    .append("line")
+    .attr("class", "x-axis-line")
+    .attr("x1", xScale.range()[0])
+    .attr("x2", xScale.range()[1])
+    .attr("y1", bottomY)
+    .attr("y2", bottomY)
+    .attr("stroke", "currentColor")
+    .attr("stroke-width", 1.5)
+  .attr("marker-end", "url(#arrow-end)");
+
+  // Y axis line (drawn bottom -> top so arrow appears at the top outer end)
+  axisLines
+    .append("line")
+    .attr("class", "y-axis-line")
+    .attr("x1", leftX)
+    .attr("x2", leftX)
+    .attr("y1", yScale.range()[1])
+    .attr("y2", yScale.range()[0])
+    .attr("stroke", "currentColor")
+    .attr("stroke-width", 1.5)
+    .attr("marker-end", "url(#arrow-end)");
 
   const link = svg
     .append("g")
@@ -375,6 +436,7 @@ function createD3ForceGraph<TData, TLink = {}>(
     const id = d.id;
     if (selectedId === id) selectedId = null;
     else selectedId = id;
+
 
     initializeForceLink();
     // restart the simulation so forces (which close over selectedId) re-evaluate
