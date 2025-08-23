@@ -1,0 +1,1 @@
+pac modelbuilder build --outdirectory ../MissionFourward.Core.Dataverse --settingsTemplateFile ./crm-model-config.json

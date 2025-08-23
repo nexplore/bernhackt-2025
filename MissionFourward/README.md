@@ -9,3 +9,8 @@
 
 ### Before you start
 - Run `az login` to authenticate with Azure.
+
+### Generate CRM client model
+- Install the pac tool: `dotnet tool update --global Microsoft.PowerApps.CLI.Tool`
+- Authenticate: `pac auth create --environment https://orgbd708c7c.crm4.dynamics.com`
+- Run `generate-crm-model.cmd` in `tools` directory.

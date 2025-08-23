@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MissionFourward.Web", "Miss
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MissionFourward.Shared", "MissionFourward.Shared\MissionFourward.Shared.csproj", "{CA915E86-D200-48F3-A822-FFD48A2CCB21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MissionFourward.Core.Dataverse", "MissionFourward.Core.Dataverse\MissionFourward.Core.Dataverse.csproj", "{2CF8F334-ACE1-4F93-986F-7A01FD5749CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{CA915E86-D200-48F3-A822-FFD48A2CCB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA915E86-D200-48F3-A822-FFD48A2CCB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA915E86-D200-48F3-A822-FFD48A2CCB21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CF8F334-ACE1-4F93-986F-7A01FD5749CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CF8F334-ACE1-4F93-986F-7A01FD5749CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CF8F334-ACE1-4F93-986F-7A01FD5749CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CF8F334-ACE1-4F93-986F-7A01FD5749CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
