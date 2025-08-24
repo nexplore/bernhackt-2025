@@ -692,7 +692,7 @@ export function ForceGraph<T, TLink = {}>(props: ForceGraphProps<T, TLink>) {
         createD3ForceGraph<T, TLink>({ nodes, links }, props)
       );
     }
-  }, [props.links, props.nodes]);
+  }, [props]);
 
   return <div ref={ref} />;
 }

@@ -1,7 +1,7 @@
 import { ExampleForceGraph } from "@/example-graph.tsx";
 import './App.css'
 import Layout from './components/layout'
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { DataSource } from './components/project-selection';
 import type { SampleNode } from './example-data.types';
 import { exampleDataStatic } from './example-data-static';
@@ -29,7 +29,7 @@ function App() {
         allNodes={currentData.nodes}
         allLinks={currentData.links}
       >
-        <ExampleForceGraph 
+        <ExampleForceGraph
           selectedDataSource={selectedDataSource}
           onNodeSelect={setSelectedNode}
         />
