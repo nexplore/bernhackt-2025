@@ -1,6 +1,6 @@
 import { ForceGraph } from "@/components/forcegraph.tsx";
 import { exampleDataStatic } from "@/example-data-static.ts";
-import { exampleDataMapped } from "@/example-data.util";
+// import { exampleDataMapped } from "@/example-data.util";
 import * as d3 from "d3";
 import type React from "react";
 
