@@ -3,6 +3,8 @@ import { exampleDataStatic } from "@/example-data-static.ts";
 import { exampleDataMapped } from "@/example-data.util";
 import * as d3 from "d3";
 import type React from "react";
+import type { DataSource } from "@/components/project-selection";
+import type { SampleNode } from "@/example-data.types";
 
 export type SampleLink = {
   source: string;
@@ -11,12 +13,23 @@ export type SampleLink = {
   attractionY: number;
 };
 
+interface ExampleForceGraphProps {
+  selectedDataSource: DataSource;
+  onNodeSelect: (node: SampleNode | null) => void;
+}
+
 /**
  * An example force-directed graph component using sample data.
  */
-export const ExampleForceGraph: React.FC = () => {
-  // const data = exampleDataMapped
-  const data = exampleDataStatic;
+export const ExampleForceGraph: React.FC<ExampleForceGraphProps> = ({ 
+  selectedDataSource, 
+  onNodeSelect 
+}) => {
+  const data = selectedDataSource === 'mapped' ? exampleDataMapped : exampleDataStatic;
+
+  const handleNodeClick = (node: any, selected: boolean) => {
+    onNodeSelect(selected ? node : null);
+  };
 
   return (
     <ForceGraph
@@ -29,6 +42,7 @@ export const ExampleForceGraph: React.FC = () => {
       })}
       nodeRadius={(node) => node.size * 6}
       nodeTitle={(node) => node.group}
+      nodeOnClick={handleNodeClick}
       nodeFill={(node) => {
         if (node.benefit <= 0) {
           // Blend from red to white
