@@ -67,13 +67,18 @@ type ForceGraphOptions<T, TLink = {}> = {
   linkStrokeLinecap?: string | ((d: ForceGraphLink<TLink>) => string);
   /** Stroke dasharray for links (e.g. "4 2") or accessor returning such a string. */
   linkStrokeStyle?: string | ((d: ForceGraphLink<TLink>) => string);
+  /** Additional offset (pixels) to subtract from the link end so the line stops before the node edge. Can be a number or accessor. */
+  linkEndOffset?: number | ((d: ForceGraphLink<TLink>) => number);
   /**
    * Link marker configuration. Either a marker id (string) applied to all
    * links, or an accessor returning { type: 'arrow' | 'none', size }.
    */
   linkMarker?:
     | string
-    | ((d: ForceGraphLink<TLink>) => { type: "arrow-start" | "arrow-end" | "none"; size: number });
+    | ((d: ForceGraphLink<TLink>) => {
+        type: "arrow-start" | "arrow-end" | "none";
+        size: number;
+      });
   /** Per-link strength (or accessor). When provided, link strength may be
    * gated by selection so only links touching the selected node are active. */
   linkStrength?: number | ((d: ForceGraphLink<TLink>) => number);
@@ -135,11 +140,12 @@ function createD3ForceGraph<TData, TLink = {}>(
     linkStroke = "#999",
     linkStrokeOpacity = 0.6,
     linkStrokeWidth = 1.5,
-  linkStrokeStyle,
+    linkStrokeStyle,
     linkStrokeLinecap = "round",
     linkStrength,
     nodeOnClick,
     linkMarker,
+    linkEndOffset = 0,
     xLabel = "x",
     yLabel = "y",
     axisMargin = 40,
@@ -169,23 +175,28 @@ function createD3ForceGraph<TData, TLink = {}>(
   }
 
   const nodesIntern = d3.map(nodes, nodeId).map(intern);
-  const nodesRadiusIntern = typeof nodeRadius !== "function" ? null : d3.map(nodes, nodeRadius);
+  const nodesRadiusIntern =
+    typeof nodeRadius !== "function" ? null : d3.map(nodes, nodeRadius);
   const linkSourcesIntern = d3.map(links, linkSource).map(intern);
   const linkTargetsIntern = d3.map(links, linkTarget).map(intern);
   if (nodeTitle === undefined) nodeTitle = (_, i) => nodesIntern[i];
   const titles = nodeTitle == null ? null : d3.map(nodes, nodeTitle);
-  const nodeGroupsIntern = nodeGroup == null ? null : d3.map(nodes, nodeGroup).map(intern);
+  const nodeGroupsIntern =
+    nodeGroup == null ? null : d3.map(nodes, nodeGroup).map(intern);
   const lineStrokeWidths =
     typeof linkStrokeWidth !== "function"
       ? null
       : d3.map(links, linkStrokeWidth);
-  const lineStrokes = typeof linkStroke !== "function" ? null : d3.map(links, linkStroke);
+  const lineStrokes =
+    typeof linkStroke !== "function" ? null : d3.map(links, linkStroke);
   const lineStrokeLineCaps =
     typeof linkStrokeLinecap !== "function"
       ? null
       : d3.map(links, linkStrokeLinecap);
   const lineStrokeStyles =
-    typeof linkStrokeStyle !== "function" ? null : d3.map(links, linkStrokeStyle as any);
+    typeof linkStrokeStyle !== "function"
+      ? null
+      : d3.map(links, linkStrokeStyle as any);
 
   // Compute per-link marker types. If `linkMarker` is a function, evaluate
   // it per-link to obtain dynamic marker type/size. If `linkMarker` is a
@@ -198,7 +209,9 @@ function createD3ForceGraph<TData, TLink = {}>(
   } else if (!linkMarker) {
     const sxAcc = 0;
     const syAcc = 0;
-    linkMarkerDefaults = d3.map(links, (_) => (sxAcc + syAcc > 0 ? "arrow" : null));
+    linkMarkerDefaults = d3.map(links, (_) =>
+      sxAcc + syAcc > 0 ? "arrow" : null
+    );
   }
 
   // Replace immutable input arrays with mutable shallow copies used by D3.
@@ -207,10 +220,16 @@ function createD3ForceGraph<TData, TLink = {}>(
     ...link,
     source: linkSourcesIntern[i],
     target: linkTargetsIntern[i],
+    // store a per-link computed end offset for use during tick updates
+    endOffset:
+      typeof linkEndOffset === "function"
+        ? (linkEndOffset as any)(link)
+        : (linkEndOffset as number),
   }));
 
   // Compute default domains for ordinal scales if not provided.
-  if (nodeGroupsIntern && nodeGroups === undefined) nodeGroups = d3.sort(nodeGroupsIntern);
+  if (nodeGroupsIntern && nodeGroups === undefined)
+    nodeGroups = d3.sort(nodeGroupsIntern);
 
   // Construct visual scales (e.g., ordinal color scale) used by the graph.
   const color = nodeGroup == null ? null : d3.scaleOrdinal(nodeGroups, colors);
@@ -395,8 +414,11 @@ function createD3ForceGraph<TData, TLink = {}>(
 
   const link = svg
     .append("g")
-  .attr("stroke", typeof linkStroke !== "function" ? linkStroke : null)
-  .attr("stroke-dasharray", typeof linkStrokeStyle !== "function" ? linkStrokeStyle : null)
+    .attr("stroke", typeof linkStroke !== "function" ? linkStroke : null)
+    .attr(
+      "stroke-dasharray",
+      typeof linkStrokeStyle !== "function" ? linkStrokeStyle : null
+    )
     .attr("stroke-opacity", linkStrokeOpacity)
     .attr(
       "stroke-width",
@@ -413,7 +435,9 @@ function createD3ForceGraph<TData, TLink = {}>(
       if (typeof linkMarker === "function")
         return `url(#${(linkMarker as any)(d).type})`;
       if (linkMarker) return `url(#${linkMarker})`;
-      return linkMarkerDefaults && linkMarkerDefaults[i] ? `url(#${linkMarkerDefaults[i]})` : null;
+      return linkMarkerDefaults && linkMarkerDefaults[i]
+        ? `url(#${linkMarkerDefaults[i]})`
+        : null;
     })
     .attr("markerWidth", (d, i) => {
       if (typeof linkMarker === "function") return (linkMarker as any)(d).size;
@@ -507,10 +531,16 @@ function createD3ForceGraph<TData, TLink = {}>(
   // Initialize node/link styles based on options and selection.
   updateNodeStyles();
 
-  if (lineStrokeWidths) link.attr("stroke-width", (_, i) => lineStrokeWidths[i]);
+  if (lineStrokeWidths)
+    link.attr("stroke-width", (_, i) => lineStrokeWidths[i]);
   if (lineStrokes) link.attr("stroke", (_, i) => lineStrokes[i]);
-  if (lineStrokeLineCaps) link.attr("stroke-linecap", (_, i) => lineStrokeLineCaps[i]);
-  if (lineStrokeStyles) link.attr("stroke-dasharray", (_: any, i: number) => lineStrokeStyles[i] as string);
+  if (lineStrokeLineCaps)
+    link.attr("stroke-linecap", (_, i) => lineStrokeLineCaps[i]);
+  if (lineStrokeStyles)
+    link.attr(
+      "stroke-dasharray",
+      (_: any, i: number) => lineStrokeStyles[i] as string
+    );
   if (linkMarkers) link.attr("marker-end", (_, i) => `url(#${linkMarkers[i]})`);
   if (nodeGroupsIntern) node.attr("fill", (_, i) => color(nodeGroupsIntern[i]));
   if (nodesRadiusIntern) node.attr("r", (_, i) => nodesRadiusIntern[i]);
@@ -546,18 +576,20 @@ function createD3ForceGraph<TData, TLink = {}>(
         // Support function or number for nodeRadius
         const r =
           typeof nodeRadius === "function" ? nodeRadius(d.target) : nodeRadius;
+        const extra = (d.endOffset ?? 0) as number;
         const len = Math.sqrt(dx * dx + dy * dy);
         if (!len) return d.target.x;
-        return d.target.x - (dx * r) / len;
+        return d.target.x - (dx * (r + extra)) / len;
       })
       .attr("y2", (d: any) => {
         const dx = d.target.x - d.source.x;
         const dy = d.target.y - d.source.y;
         const r =
           typeof nodeRadius === "function" ? nodeRadius(d.target) : nodeRadius;
+        const extra = (d.endOffset ?? 0) as number;
         const len = Math.sqrt(dx * dx + dy * dy);
         if (!len) return d.target.y;
-        return d.target.y - (dy * r) / len;
+        return d.target.y - (dy * (r + extra)) / len;
       });
 
     node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
