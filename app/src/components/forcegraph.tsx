@@ -692,7 +692,11 @@ export function ForceGraph<T, TLink = {}>(props: ForceGraphProps<T, TLink>) {
         createD3ForceGraph<T, TLink>({ nodes, links }, props)
       );
     }
-  }, [props]);
+    // Intentionally only recreate when nodes or links arrays change.
+    // Recreating on every render (the previous `[props]` dependency)
+    // would reset the D3 closure state (including `selectedId`) and
+    // cause selected-node styles to disappear.
+  }, [props.nodes, props.links]);
 
   return <div ref={ref} />;
 }
