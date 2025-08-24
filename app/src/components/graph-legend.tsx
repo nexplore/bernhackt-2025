@@ -9,7 +9,7 @@ export function GraphLegend() {
     <SidebarGroup>
       <SidebarGroupLabel>Legend</SidebarGroupLabel>
       <SidebarGroupContent>
-        <div className="space-y-4 text-sm">
+        <div className="space-y-4 px-2 text-sm">
           {/* Node Colors */}
           <div>
             <h4 className="font-medium mb-2">Node Colors (Benefit)</h4>

@@ -22,7 +22,7 @@ export function ProjectSelection({ selectedDataSource, onDataSourceChange }: Pro
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Data Source</SidebarGroupLabel>
-      <SidebarGroupContent>
+      <SidebarGroupContent className="px-2 ">
         <Select value={selectedDataSource} onValueChange={onDataSourceChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select data source" />
