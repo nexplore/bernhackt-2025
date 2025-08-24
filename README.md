@@ -1,6 +1,6 @@
 # Impact Map
 
-This repository contains a prototype for an "Force directed graph", which renders nodes with connections on a two dimensional plane.
+This repository contains a prototype for an "Force directed graph", which renders nodes with its connections on a two-dimensional plane.
 The nodes incorporate multiple dimensions of data, which are visualized through size, color.
 The chosen data-dimensions are based on the framework as described in the requirements of the challenge.
 
