@@ -2,17 +2,44 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar"
+import { GraphLegend } from "@/components/graph-legend"
+import { ProjectSelection, type DataSource } from "@/components/project-selection"
+import { SelectedItemDetails } from "@/components/selected-item-details"
+import type { SampleNode, SampleLink } from "@/example-data.types"
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  selectedDataSource: DataSource;
+  onDataSourceChange: (dataSource: DataSource) => void;
+  selectedNode: SampleNode | null;
+  allNodes: SampleNode[];
+  allLinks: SampleLink[];
+}
+
+export function AppSidebar({ 
+  selectedDataSource, 
+  onDataSourceChange, 
+  selectedNode, 
+  allNodes, 
+  allLinks 
+}: AppSidebarProps) {
   return (
     <Sidebar>
-      <SidebarHeader />
+      <SidebarHeader>
+        <h2 className="text-lg font-semibold p-4">Impact Map</h2>
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup />
-        <SidebarGroup />
+        <ProjectSelection 
+          selectedDataSource={selectedDataSource}
+          onDataSourceChange={onDataSourceChange}
+        />
+        <GraphLegend />
+        <SelectedItemDetails 
+          selectedNode={selectedNode}
+          allNodes={allNodes}
+          allLinks={allLinks}
+        />
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
