@@ -5,7 +5,12 @@ The nodes incorporate multiple dimensions of data, which are visualized through 
 The chosen data-dimensions are based on the framework as described in the requirements of the challenge.
 Clicking on a node will activate the attraction forces between its connections.
 
+### Figma
+
+- [Prototype](https://www.figma.com/design/L5QH4kMGKe6VYNSz7GFWG8/Impact-Map?m=auto&t=EHh1vpD50tmzHaAF-1) view access with password `bernhackt2025`
+
 ### Run frontend prototype
+
 - Make sure you have [pnpm](https://pnpm.io/) installed. (`npm install -g pnpm`)
 - Navigate to `app` directory.
 - Run `pnpm install` to install dependencies.
