@@ -124,7 +124,7 @@ function createD3ForceGraph<TData, TLink = {}>(
     nodeTitle,
     nodeFill = "white",
     nodeStroke = "currentColor",
-    nodeStrokeWidth = 1.5,
+    nodeStrokeWidth = 3,
     nodeStrokeOpacity = 1,
     nodeRadius = 5,
     nodeStrength,
@@ -150,7 +150,7 @@ function createD3ForceGraph<TData, TLink = {}>(
     yLabel = "y",
     axisMargin = 40,
     colors = d3.schemeTableau10,
-    width = 1000,
+    width = 800,
     height = 800,
     invalidation,
   }: ForceGraphOptions<TData, TLink> = {}
