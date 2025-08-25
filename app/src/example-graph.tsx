@@ -21,11 +21,12 @@ interface ExampleForceGraphProps {
 /**
  * An example force-directed graph component using sample data.
  */
-export const ExampleForceGraph: React.FC<ExampleForceGraphProps> = ({ 
-  selectedDataSource, 
-  onNodeSelect 
+export const ExampleForceGraph: React.FC<ExampleForceGraphProps> = ({
+  selectedDataSource,
+  onNodeSelect,
 }) => {
-  const data = selectedDataSource === 'mapped' ? exampleDataMapped : exampleDataStatic;
+  const data =
+    selectedDataSource === "mapped" ? exampleDataMapped : exampleDataStatic;
 
   const handleNodeClick = (node: any, selected: boolean) => {
     onNodeSelect(selected ? node : null);
@@ -43,7 +44,7 @@ export const ExampleForceGraph: React.FC<ExampleForceGraphProps> = ({
       nodeRadius={(node) => node.size * 6}
       nodeTitle={(node) => node.group}
       nodeOnClick={handleNodeClick}
-      nodeFill={(node) => {
+      nodeStroke={(node) => {
         if (node.benefit <= 0) {
           // Blend from red to white
           return d3.interpolateRgb("red", "white")(node.benefit + 1);
@@ -52,6 +53,7 @@ export const ExampleForceGraph: React.FC<ExampleForceGraphProps> = ({
           return d3.interpolateRgb("white", "green")(node.benefit);
         }
       }}
+      nodeFill={(node) => node.color}
       links={data.links}
       linkStrength={(link) => attractionDist(link) / 10}
       linkMarker={(link) =>
